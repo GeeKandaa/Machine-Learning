@@ -1,0 +1,15 @@
+In order to avoid storage large amounts of data, links to source and data structure will be listed here
+
+chest_xray dataset: https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia
+	structure:
+			data/archive/chest_xray/
+				train/
+					NORMAL/
+					PNEUMONIA/
+				test/
+					NORMAL/
+					PNEUMONIA/
+				val/
+					NORMAL/
+					PNEUMONIA/
+

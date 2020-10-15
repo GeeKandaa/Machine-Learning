@@ -1,4 +1,6 @@
 ## Example image machine learning model using a CNN: Tensorflow version.
+from comet_ml import Experiment, ConfusionMatrix
+experiment = Experiment("OEqrajWzBdsHvoiWKfOdiAo0c", disabled=True)
 
 import glob
 import numpy as np
@@ -10,7 +12,7 @@ import matplotlib.pyplot as plt
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Conv2D, MaxPooling2D, Flatten, Dropout, BatchNormalization
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, Callback
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.optimizers import RMSprop, Adam
 from tensorflow.keras.utils import to_categorical
@@ -52,20 +54,36 @@ train_list = []
 test_list = []
 val_list = []
 
+# j=0 
 for i in train_norm_cases:
+    # experiment.log_image(i, name='training_healthy_'+str(j), overwrite=False)
     train_list.append([i, 0])
+    # j+=1
+# j=0
 for i in train_pneu_cases:
+    # experiment.log_image(i, name='training_pneumonia_'+str(j), overwrite=False)
     train_list.append([i, 1])
-
+    # j+=1
+# j=0
 for i in test_norm_cases:
+    # experiment.log_image(i, name='testing_healthy_'+str(j), overwrite=False)
     test_list.append([i, 0])
+    # j+=1
+# j=0
 for i in test_pneu_cases:
+    # experiment.log_image(i, name='testing_pneumonia_'+str(j), overwrite=False)
     test_list.append([i, 1])
-
+    # j+=1
+# j=0
 for i in val_norm_cases:
+    # experiment.log_image(i, name='validation_healthy_'+str(j), overwrite=False)
     val_list.append([i, 0])
+    # j+=1
+# j=0
 for i in val_pneu_cases:
+    # experiment.log_image(i, name='validation_pneumonia_'+str(j), overwrite=False)
     val_list.append([i, 1])
+    # j+=1
 
 ##DEBUG
 ##print(train_list)
@@ -172,8 +190,24 @@ y_train = to_categorical(y_train)
 y_test = to_categorical(y_test)
 y_val = to_categorical(y_val)
 
+class ConfusionMatrixCallback(Callback):
+    def __init__(self, experiment, inputs, targets):
+        self.experiment = experiment
+        self.inputs = inputs
+        self.targets = targets
+
+    def on_epoch_end(self, epoch, logs={}):
+        predicted = self.model.predict(self.inputs)
+        self.experiment.log_confusion_matrix(
+            self.targets,
+            predicted,
+            title="Confusion Matrix, Epoch #%d" % (epoch + 1),
+            file_name="confusion-matrix-%03d.json" % (epoch + 1),
+        )
+
 #############################################################################################################################
 ## Modelling
+
 
 model = Sequential()
 
@@ -206,8 +240,8 @@ model.add(Dense(2, activation='softmax'))
 optimizer = Adam(lr=0.0001, decay=1e-5)
 model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
-callback = EarlyStopping(monitor='loss', patience=6)
-history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = 25, verbose = 1, callbacks=[callback], class_weight={0:6.0, 1:0.5})
+callback = [ConfusionMatrixCallback(experiment, X_test, y_test),EarlyStopping(monitor='loss', patience=6)]
+history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = 5, verbose = 1, callbacks=callback, class_weight={0:6.0, 1:0.5})
 
 ################################################################################################################################
 ##Evaluation
@@ -219,14 +253,22 @@ sb.lineplot(x = history.epoch, y = history.history['loss'], color='red', label =
 sb.lineplot(x = history.epoch, y = history.history['val_loss'], color='orange', label='Validation Loss')
 plt.title('Loss on training vs testing')
 plt.legend(loc = 'best')
+plt.xlabel("Epoch #")
+plt.ylabel("Loss")
 
 plt.subplot(1,2,2)
 sb.lineplot(x = history.epoch, y = history.history['accuracy'], color = 'blue', label = 'Accuracy')
 sb.lineplot(x = history.epoch, y = history.history['val_accuracy'], color = 'green', label = 'Validation Accuracy')
+plt.xlabel("Epoch #")
+plt.ylabel("Accuracy")
 plt.title('Accuracy on training vs testing')
 plt.legend(loc = 'best')
 
-plt.show()
+# plt.show()
+
+for i in history.epoch:
+    experiment.log_metric("accuracy", history.history['accuracy'][i], epoch=i+1)
+    experiment.log_metric("loss", history.history['loss'][i],epoch=i+1)
 
 ################################################################################################################################
 ## Confusion matrix
@@ -234,8 +276,9 @@ plt.show()
 y_test_hat = model.predict(X_test, batch_size=4)
 y_test_hat = np.argmax(y_test_hat, axis=1)
 y_test = np.argmax(y_test, axis=1)
-
+experiment.log_confusion_matrix(y_test,y_test_hat)
 conf_m = confusion_matrix(y_test, y_test_hat)
+
 clas_r = classification_report(y_test, y_test_hat)
 
 plt.figure(figsize = (5,3))
@@ -247,7 +290,7 @@ plt.ylabel('True labels')
 ax.xaxis.set_ticks_position('top')
 plt.title('Confusion matrix - test data\n(H - healthy/normal, P - pneumonia)')
 
-plt.show()
+# plt.show()
 
 ################################################################################################################################
 ## Validation & Report
@@ -265,3 +308,6 @@ for i,x in enumerate(X_val):
     plt.imshow(x.reshape(196, 196), cmap='gray')
     plt.axis('off')
     plt.title('Predicted: {}, Real: {}'.format(y_val_hat[i], y_val[i])) 
+
+## Summary
+print(model.summary())
