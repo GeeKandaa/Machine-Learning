@@ -1,0 +1,37 @@
+{
+    "optimiser": {
+        "Active":true,
+        "name":"Adam",
+        "lr":0.0001,
+        "beta_1":0.9,
+        "beta_2":0.999,
+        "epsilon":null,
+        "decay":1e-5
+    },
+    
+    "callback":{
+        "Active":true,
+        "EarlyStopping":{
+            "Active":true,
+            "name":"EarlyStopping",
+            "params":["monitor","min_delta","patience","verbose","mode","baseline","restore_best_weights"],
+            "monitor":"loss",
+            "min_delta":0, 
+            "patience":6,
+            "verbose":0,
+            "mode":"auto",
+            "baseline":null,
+            "restore_best_weights":false
+        }
+    },
+
+    "compile":{
+        "loss":"binary_crossentropy",
+        "metrics":[
+            "accuracy"
+        ],
+        "loss_weights":null,
+        "weighted_metrics":null,
+        "run_eagerly":false
+    }
+}

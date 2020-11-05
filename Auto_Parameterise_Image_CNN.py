@@ -2,6 +2,9 @@
 from comet_ml import Experiment, ConfusionMatrix
 experiment = Experiment("OEqrajWzBdsHvoiWKfOdiAo0c", disabled=True)
 
+import argparse
+import json
+from modules import json_comm
 import glob
 import numpy as np
 import cv2
@@ -18,6 +21,13 @@ from tensorflow.keras.optimizers import RMSprop, Adam
 from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import classification_report, confusion_matrix
 
+####################################################################################################################
+## Load parameters
+
+param_vals = json_comm.get_param()
+
+
+        
 ####################################################################################################################
 ## INITIALISATION AND VISUALISATION
 
@@ -54,36 +64,51 @@ train_list = []
 test_list = []
 val_list = []
 
-# j=0 
+j=0 
 for i in train_norm_cases:
     # experiment.log_image(i, name='training_healthy_'+str(j), overwrite=False)
     train_list.append([i, 0])
-    # j+=1
+    j+=1
 # j=0
+# print(j)
+k=0
 for i in train_pneu_cases:
     # experiment.log_image(i, name='training_pneumonia_'+str(j), overwrite=False)
     train_list.append([i, 1])
-    # j+=1
-# j=0
+    k+=1
+    if k == j:
+        break
+    # print(i)
+j=0
 for i in test_norm_cases:
     # experiment.log_image(i, name='testing_healthy_'+str(j), overwrite=False)
     test_list.append([i, 0])
-    # j+=1
+    j+=1
 # j=0
+# print(j)
+k=0
 for i in test_pneu_cases:
     # experiment.log_image(i, name='testing_pneumonia_'+str(j), overwrite=False)
     test_list.append([i, 1])
-    # j+=1
-# j=0
+    k+=1
+    if k == j:
+        break
+    # print(i)
+j=0
 for i in val_norm_cases:
     # experiment.log_image(i, name='validation_healthy_'+str(j), overwrite=False)
     val_list.append([i, 0])
-    # j+=1
+    j+=1
 # j=0
+# print(j)
+k=0
 for i in val_pneu_cases:
     # experiment.log_image(i, name='validation_pneumonia_'+str(j), overwrite=False)
     val_list.append([i, 1])
-    # j+=1
+    k+=1
+    if k == j:
+        break
+    # print(i)
 
 ##DEBUG
 ##print(train_list)
@@ -102,7 +127,8 @@ val_df = pd.DataFrame(val_list, columns=['image','label'])
 
 
 #visualise data distribution
-cont = input('Visualise data? (y/n)')
+# cont = input('Visualise data? (y/n)')
+cont = 'n'
 if cont == 'y':
     plt.figure(figsize=(20,5))
 
@@ -139,7 +165,7 @@ if cont == 'y':
     plt.show()
 
 print('Data visualisation complete')
-cont = input('Enter to continue')
+# cont = input('Enter to continue')
 
 ###########################################################################################################################
 ## DATA PROCESSING
@@ -237,11 +263,14 @@ model.add(Dense(128, activation='relu'))
 model.add(Dropout(0.2))
 model.add(Dense(2, activation='softmax'))
 
-optimizer = Adam(lr=0.0001, decay=1e-5)
-model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+if param_vals['optimiser']['name'] == "Adam":
+    params = param_vals['optimiser']
+    optimizer = Adam(lr=params['lr'], beta_1=params['beta_1'], beta_2=params['beta_2'], epsilon=params['epsilon'], decay=params['decay'])
+params = param_vals['compile']
+model.compile(loss=params['loss'], optimizer=optimizer, metrics=params['metrics'], loss_weights=params['loss_weights'], weighted_metrics=params['weighted_metrics'], run_eagerly=params['run_eagerly'])
 
 callback = [ConfusionMatrixCallback(experiment, X_test, y_test),EarlyStopping(monitor='loss', patience=6)]
-history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = 5, verbose = 1, callbacks=callback, class_weight={0:6.0, 1:0.5})
+history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = 2, verbose = 1, callbacks=[callback[0]], class_weight={0:6.0, 1:0.5})
 
 ################################################################################################################################
 ##Evaluation
