@@ -1,6 +1,6 @@
 @echo off
 call C:\\Users\GeeKandaa\anaconda3\Scripts\activate.bat C:\\Users\GeeKandaa\anaconda3\
-call activate tensorflow_ml_env
+call activate tensorflow
 cd C:\\Users\GeeKandaa\python_scripts\Image_CNN
 
 @REM FOR /L %%x IN (1,1,1) DO python Image_CNN_Example_Tensorflow.py

@@ -1,9 +1,15 @@
 ## Example image machine learning model using a CNN: Tensorflow version.
 from comet_ml import Experiment, ConfusionMatrix
-experiment = Experiment("OEqrajWzBdsHvoiWKfOdiAo0c", disabled=True)
-
+experiment = Experiment(
+    api_key="OEqrajWzBdsHvoiWKfOdiAo0c",
+    project_name="mixed-ml-experiment-balanced-training-set",
+    workspace="geekandaa",
+    disabled=True
+)
 import argparse
 import json
+import os
+import math
 from modules import json_comm
 import glob
 import numpy as np
@@ -22,98 +28,108 @@ from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import classification_report, confusion_matrix
 
 ####################################################################################################################
-## Load parameters
+## Load parameters, initialise list to return (for use in taskfarming)
 
 param_vals = json_comm.get_param()
-
+ret = []
 
         
 ####################################################################################################################
 ## INITIALISATION AND VISUALISATION
 
 ## Loading data
-path = 'data/archive/chest_xray/'
+path = 'active_data/'
 
-train_norm_dir = path + 'train/NORMAL/'
-train_pneu_dir = path + 'train/PNEUMONIA/'
-
-test_norm_dir = path + 'test/NORMAL/'
-test_pneu_dir = path + 'test/PNEUMONIA/'
-
-val_norm_dir = path + 'val/NORMAL/'
-val_pneu_dir = path + 'val/PNEUMONIA/'
+val_negative_cases = []
+val_positive_cases = []
 
 ## Using glob acts as a file type filter to ensure type syncronosity
-train_norm_cases = glob.glob(train_norm_dir + '*jpeg')
-train_pneu_cases = glob.glob(train_pneu_dir + '*jpeg')
+positive_cases = glob.glob(path + param_vals["model"]["data"][1] + '/*.jpeg')
+negative_cases = glob.glob(path + param_vals["model"]["data"][0] + '/*.jpeg')
+rnd.shuffle(positive_cases)
+rnd.shuffle(negative_cases)
 
-test_norm_cases = glob.glob(test_norm_dir + '*jpeg')
-test_pneu_cases = glob.glob(test_pneu_dir + '*jpeg')
+pos_num = len(positive_cases)
+neg_num = len(negative_cases)
 
-val_norm_cases = glob.glob(val_norm_dir + '*jpeg')
-val_pneu_cases = glob.glob(val_pneu_dir + '*jpeg')
+chk_num=pos_num-neg_num
+if chk_num > 0:
+    del positive_cases[:chk_num]
+elif chk_num < 0:
+    del negative_cases[:chk_num]
 
-##train_norm_cases = [x.replace('\\', '/') for x in train_norm_cases]
-##train_pneu_cases = [x.replace('\\', '/') for x in train_pneu_cases]
-##test_norm_cases = [x.replace('\\', '/') for x in test_norm_cases]
-##test_pneu_cases = [x.replace('\\', '/') for x in test_pneu_cases]
-##val_norm_cases = [x.replace('\\', '/') for x in val_norm_cases]
-##val_pneu_cases = [x.replace('\\', '/') for x in val_pneu_cases]
+train_num = math.floor(chk_num/100*70)
+test_num = math.floor(chk_num/100*15)
+val_num = math.floor(chk_num/100*15)
+r = chk_num-(train_num+test_num+val_num)
+train_num+=r
+
+train_negative_cases = negative_cases[:train_num]
+train_positive_cases = positive_cases[:train_num]
+del negative_cases[:train_num]
+del positive_cases[:train_num]
+    
+test_negative_cases = negative_cases[:test_num]
+test_positive_cases = positive_cases[:test_num]
+del negative_cases[:test_num]
+del positive_cases[:test_num]
+
+val_negative_cases = negative_cases[:val_num]
+
+if len(param_vals["model"]["data"])==2:
+    val_positive_cases = positive_cases[:val_num]
+
+
+elif param_vals["model"]["data"][1] != param_vals["model"]["data"][2]:
+    validation_cases = glob.glob(path + param_vals["model"]["data"][2] + '/*.jpeg')
+    rnd.shuffle(validation_cases)
+    val_positive_cases = validation_cases[:val_num]
 
 train_list = []
 test_list = []
 val_list = []
 
 j=0 
-for i in train_norm_cases:
-    # experiment.log_image(i, name='training_healthy_'+str(j), overwrite=False)
+for i in train_negative_cases:
+    # experiment.log_image(i, name='training_negative_'+str(j), overwrite=False)
     train_list.append([i, 0])
     j+=1
-# j=0
-# print(j)
+
 k=0
-for i in train_pneu_cases:
-    # experiment.log_image(i, name='training_pneumonia_'+str(j), overwrite=False)
+for i in train_positive_cases:
+    # experiment.log_image(i, name='training_positive_'+str(j), overwrite=False)
     train_list.append([i, 1])
     k+=1
     if k == j:
         break
-    # print(i)
+
 j=0
-for i in test_norm_cases:
-    # experiment.log_image(i, name='testing_healthy_'+str(j), overwrite=False)
+for i in test_negative_cases:
+    # experiment.log_image(i, name='testing_negative_'+str(j), overwrite=False)
     test_list.append([i, 0])
     j+=1
-# j=0
-# print(j)
+
 k=0
-for i in test_pneu_cases:
-    # experiment.log_image(i, name='testing_pneumonia_'+str(j), overwrite=False)
+for i in test_positive_cases:
+    # experiment.log_image(i, name='testing_positive_'+str(j), overwrite=False)
     test_list.append([i, 1])
     k+=1
     if k == j:
         break
-    # print(i)
+
 j=0
-for i in val_norm_cases:
-    # experiment.log_image(i, name='validation_healthy_'+str(j), overwrite=False)
+for i in val_negative_cases:
+    # experiment.log_image(i, name='validation_negative_'+str(j), overwrite=False)
     val_list.append([i, 0])
     j+=1
-# j=0
-# print(j)
+
 k=0
-for i in val_pneu_cases:
-    # experiment.log_image(i, name='validation_pneumonia_'+str(j), overwrite=False)
+for i in val_positive_cases:
+    # experiment.log_image(i, name='validation_positive_'+str(j), overwrite=False)
     val_list.append([i, 1])
     k+=1
     if k == j:
         break
-    # print(i)
-
-##DEBUG
-##print(train_list)
-##print(test_list)
-##print(val_list)
 
 ## shuffle data
 rnd.shuffle(train_list)
@@ -125,11 +141,19 @@ train_df = pd.DataFrame(train_list, columns=['image','label'])
 test_df = pd.DataFrame(test_list, columns=['image','label'])
 val_df = pd.DataFrame(val_list, columns=['image','label'])
 
+print("\n\nDataframes:")
+print("___________________________________________________________________________________________")
+print(train_df)
+print("___________________________________________________________________________________________")
+print("___________________________________________________________________________________________")
+print(test_df)
+print("___________________________________________________________________________________________")
+print("___________________________________________________________________________________________")
+print(val_df)
+print("___________________________________________________________________________________________")
 
-#visualise data distribution
-# cont = input('Visualise data? (y/n)')
-cont = 'n'
-if cont == 'y':
+visualise = 'n'
+if visualise == 'y':
     plt.figure(figsize=(20,5))
 
     plt.subplot(1,3,1)
@@ -153,14 +177,14 @@ if cont == 'y':
         plt.axis('off')
         img = plt.imread(img_path)
         plt.imshow(img, cmap='gray')
-        plt.title('Opacity')
+        plt.title('Positive')
     
     for i,img_path in enumerate(train_df[train_df['label'] == 0][0:4]['image']):
         plt.subplot(2,4,4+i+1)
         plt.axis('off')
         img = plt.imread(img_path)
         plt.imshow(img, cmap='gray')
-        plt.title('Normal')
+        plt.title('Negative')
 
     plt.show()
 
@@ -270,7 +294,7 @@ params = param_vals['compile']
 model.compile(loss=params['loss'], optimizer=optimizer, metrics=params['metrics'], loss_weights=params['loss_weights'], weighted_metrics=params['weighted_metrics'], run_eagerly=params['run_eagerly'])
 
 callback = [ConfusionMatrixCallback(experiment, X_test, y_test),EarlyStopping(monitor='loss', patience=6)]
-history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = 2, verbose = 1, callbacks=[callback[0]], class_weight={0:6.0, 1:0.5})
+history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=[callback[0]], class_weight={0:6.0, 1:0.5})
 
 ################################################################################################################################
 ##Evaluation
@@ -293,6 +317,13 @@ plt.ylabel("Accuracy")
 plt.title('Accuracy on training vs testing')
 plt.legend(loc = 'best')
 
+if __name__ == '__main__':
+    json_comm.store_data("loss"+str(param_vals["iteration"]["#"]),[history.history['loss'][len(history.epoch)-1]])
+    json_comm.store_data("lr",[param_vals['optimiser']['lr']],False)
+    json_comm.verify_data_length()
+else:
+    ret.append(["loss"+str(param_vals["iteration"]["#"]),[history.history['loss'][len(history.epoch)-1]]])
+    ret.append(["lr",[param_vals['optimiser']['lr']],False])
 # plt.show()
 
 for i in history.epoch:
@@ -317,7 +348,7 @@ plt.yticks(rotation=0)
 plt.xlabel('Predicted labels')
 plt.ylabel('True labels')
 ax.xaxis.set_ticks_position('top')
-plt.title('Confusion matrix - test data\n(H - healthy/normal, P - pneumonia)')
+plt.title('Confusion matrix - test data\n(N - Negative, P - Positive)')
 
 # plt.show()
 
@@ -331,12 +362,14 @@ y_val_hat = model.predict(X_val, batch_size=4)
 y_val_hat = np.argmax(y_val_hat, axis=1)
 y_val = np.argmax(y_val, axis=1)
 
-plt.figure(figsize=(20,15))
-for i,x in enumerate(X_val):
-    plt.subplot(4,4,i+1)
-    plt.imshow(x.reshape(196, 196), cmap='gray')
-    plt.axis('off')
-    plt.title('Predicted: {}, Real: {}'.format(y_val_hat[i], y_val[i])) 
-
 ## Summary
 print(model.summary())
+
+if param_vals["model"]["save"]==True:
+    print("saving?")
+    model.save("model")
+
+if __name__ != '__main__':
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    comm.send(ret, dest=0, tag=comm.Get_rank())

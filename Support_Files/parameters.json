@@ -1,8 +1,12 @@
 {
+    "iteration":{
+            "#":0
+        },
+        
     "optimiser": {
         "Active":true,
         "name":"Adam",
-        "lr":0.0001,
+        "lr":0.0007,
         "beta_1":0.9,
         "beta_2":0.999,
         "epsilon":null,
@@ -33,5 +37,11 @@
         "loss_weights":null,
         "weighted_metrics":null,
         "run_eagerly":false
+    },
+
+    "model":{
+        "data":["N","PN"],
+        "save":false,
+        "epoch":50
     }
 }
