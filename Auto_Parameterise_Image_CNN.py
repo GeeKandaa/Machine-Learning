@@ -51,29 +51,32 @@ rnd.shuffle(negative_cases)
 
 pos_num = len(positive_cases)
 neg_num = len(negative_cases)
-
+print(pos_num)
+print(neg_num)
 chk_num=pos_num-neg_num
+print(chk_num)
 if chk_num > 0:
     del positive_cases[:chk_num]
 elif chk_num < 0:
     del negative_cases[:chk_num]
+num = len(positive_cases)
 
-train_num = math.floor(chk_num/100*70)
-test_num = math.floor(chk_num/100*15)
-val_num = math.floor(chk_num/100*15)
-r = chk_num-(train_num+test_num+val_num)
+train_num = math.floor(num/100*70)
+test_num = math.floor(num/100*15)
+val_num = math.floor(num/100*15)
+r = num-(train_num+test_num+val_num)
 train_num+=r
 
 train_negative_cases = negative_cases[:train_num]
 train_positive_cases = positive_cases[:train_num]
 del negative_cases[:train_num]
 del positive_cases[:train_num]
-    
+#print(train_negative_cases)
 test_negative_cases = negative_cases[:test_num]
 test_positive_cases = positive_cases[:test_num]
 del negative_cases[:test_num]
 del positive_cases[:test_num]
-
+#print(test_negative_cases)
 val_negative_cases = negative_cases[:val_num]
 
 if len(param_vals["model"]["data"])==2:
