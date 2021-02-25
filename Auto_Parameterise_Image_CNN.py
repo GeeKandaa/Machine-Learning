@@ -27,9 +27,16 @@ from tensorflow.keras.optimizers import RMSprop, Adam
 from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import classification_report, confusion_matrix
 
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+
 ####################################################################################################################
 ## Load parameters, initialise list to return (for use in taskfarming)
 
+# if __name__ != '__main__':
+#     param_vals = json_comm.mpi_get_param()
+# else:
+#     param_vals = json_comm.get_param()
 param_vals = json_comm.get_param()
 ret = []
 
@@ -373,6 +380,4 @@ if param_vals["model"]["save"]==True:
     model.save("model")
 
 if __name__ != '__main__':
-    from mpi4py import MPI
-    comm = MPI.COMM_WORLD
     comm.send(ret, dest=0, tag=comm.Get_rank())

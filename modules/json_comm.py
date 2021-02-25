@@ -1,5 +1,15 @@
 import argparse
 import json
+# from mpi4py import MPI
+#     comm= MPI.COMM_WORLD
+#     rank = comm.Get_rank()
+# def mpi_get_param():
+#     if rank == 0:
+#         goahead = True
+#         comm.send(goahead, dest=1)
+#     else:
+#         goahead=comm.recv(source=rank-1)
+#         return get_param()
 
 def pairs(arg):
     left = arg.split(":")[0] 
@@ -61,6 +71,9 @@ def get_param():
 
     compile_parser = subparsers.add_parser('model', help="model help")
     parser.add_argument("--model", type=pairs, nargs='+', help="define model parameters")
+
+    compile_parser = subparsers.add_parser('gridsearch', help="gridsearch help")
+    parser.add_argument("--gridsearch", type=pairs, nargs='+', help="pass parameter to gridsearch as key:value pair, define 'step':value to alter step size.")
 
     args = parser.parse_args()
 
@@ -129,7 +142,19 @@ def get_param():
         new_val = args.model
         for i in range(len(new_val)):
             param_vals["model"][new_val[i][0]]=new_val[i][1]
-            
+    
+    if args.gridsearch != None:
+        from mpi4py import MPI
+        comm= MPI.COMM_WORLD
+        rank = comm.Get_rank()
+        key_value = args.gridsearch
+        stepsize = 1
+        if len(args.gridsearch) == 2:
+            stepsize = float(args.gridsearch[1][1])
+        if rank == 1:
+            param_vals[key_value[0][0]][key_value[0][1]]=param_vals[key_value[0][0]][key_value[0][1]]
+        else:
+            param_vals[key_value[0][0]][key_value[0][1]]=param_vals[key_value[0][0]][key_value[0][1]]+stepsize*(rank-1)
 
     for entry_key,entry_val in param_vals.items():
         UnString_Value(entry_val)
