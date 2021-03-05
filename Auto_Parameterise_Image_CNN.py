@@ -18,8 +18,9 @@ import random as rnd
 import pandas as pd
 import seaborn as sb
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, save_model, load_model
 from tensorflow.keras.layers import Dense, Conv2D, MaxPooling2D, Flatten, Dropout, BatchNormalization
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, Callback
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -377,7 +378,9 @@ print(model.summary())
 
 if param_vals["model"]["save"]==True:
     print("saving?")
-    model.save("model")
+    # model.save("model")
+    # tf.saved_model.save(model,"saved_model")
+    save_model(model,"save_model")
 
 if __name__ != '__main__':
     comm.send(ret, dest=0, tag=comm.Get_rank())
