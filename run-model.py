@@ -65,7 +65,7 @@ clas_r = classification_report(y_test, y_test_hat)
 
 plt.figure(figsize = (5,3))
 sb.set(font_scale = 1.2)
-ax = sb.heatmap(conf_m, annot=True, xticklabels = ['H','P'], yticklabels = ['H', 'P'], cbar=False, cmap='Blues', linewidths=1, linecolor='black', fmt='.0f')
+ax = sb.heatmap(conf_m, annot=True, xticklabels = ['Negative','Positive'], yticklabels = ['Negative', 'Positive'], cbar=False, cmap='Blues', linewidths=1, linecolor='black', fmt='.0f')
 plt.yticks(rotation=0)
 plt.xlabel('Predicted labels')
 plt.ylabel('True labels')

@@ -38,10 +38,24 @@ def UnString_Value(entry):
                     entry[entry_key] = False
                     continue
                 if entry_val[0] == "[" and entry_val[-1] == "]":
+                    print(entry_val)
                     entry[entry_key] = entry_val.strip("[]").split(",")
+                    for i in range(0,len(entry[entry_key])):
+                        try:
+                            test = float(entry[entry_key][i])
+                            if test.is_integer():
+                                print(test.is_integer)
+                                print(test)
+                                entry[entry_key][i] = int(test)
+                                print(int(test))
+                            else:
+                                entry[entry_key][i] = test
+                        # print("hit:",entry," | ", entry_key,",",entry_val)
+                        except:
+                            continue
                 try:
                     test = float(entry_val)
-                    if test.is_integer:
+                    if test.is_integer():
                         entry[entry_key] = int(entry_val)
                     else:
                         entry[entry_key] = test
@@ -110,7 +124,9 @@ def get_param():
         param_vals["model"] = {
             "data":assigned["model"]["data"],
             "save":assigned["model"]["save"],
-            "epoch":assigned["model"]["epoch"]
+            "epoch":assigned["model"]["epoch"],
+            "threshold":assigned["model"]["threshold"],
+            "class_weights":assigned["model"]["class_weights"]
         }
     print(" _____________________________________________________\n|Non-Default Parameters:")
     print("|\n|     optimiser:",args.optimiser)
@@ -166,42 +182,55 @@ def get_param():
     # cont=input("END.")
     return param_vals
 
-def store_data(id, vals, duplicates=True):
+def store_data(id, vals, group, duplicates=True):
     try:
+        print("opening")
         with open('Support_Files\output_data.json') as json_file:
-            existing_data = json.load(json_file)           
-            if id in existing_data:
+            print("opening sucess")
+            existing_data = json.load(json_file)
+            group_data={}
+            print("loading sucess", existing_data)
+            if group in existing_data:
+                group_data = existing_data[group]
+            else:
+                existing_data[group] = group_data
+            if id in group_data:
                 print("id exists")
-                data = existing_data[id]
+                data = group_data[id]
                 print("previous: ", data)
                 for val in vals:
                     if val in data:
                         if duplicates == True:
                             data.append(val)
                             print("duplicate new: ", val)
-                            existing_data[id] = data
+                            group_data[id] = data
                         else:
                             print("avoiding duplicate")
                             return
                     else:
                         print("non-dupe new: ", val)
                         data.append(val)
-                        existing_data[id] = data
+                        group_data[id] = data
             else:
+                print("this is vals", vals)
                 print("1",existing_data)
-                existing_data[id] = vals
-                print("2 created id: ",id,":",existing_data[id])
-            json.dump(existing_data, open('Support_Files\output_data.json','w'))
-            print("3",existing_data)
+                group_data[id] = vals
+                print("2 created id: ",id,":",group_data[id])
+        existing_data[group]=group_data
+        with open('Support_Files\output_data.json','w') as json_file:
+            json.dump(existing_data, json_file, sort_keys=True, indent=4)
+        print("3",existing_data)
     except:
-        data = {id:vals}
+        data = {group:{id:vals}}
+        print("exception", vals)
         print("created file: ",data)
         with open('Support_Files\output_data.json','w') as json_file:
             json.dump(data, json_file)
 
 def verify_data_length():
     with open('Support_Files\output_data.json') as json_file:
-        existing_data = json.load(json_file) 
+        existing_data = json.load(json_file)
+        existing_data=json.dumps(existing_data) 
         check_length=min([len(existing_data[ele]) for ele in existing_data])
         print(check_length)
         print(existing_data)
@@ -210,7 +239,7 @@ def verify_data_length():
             while len(existing_data[id]) > check_length:
                 print("list too long removing element")
                 del existing_data[id][0]
-    json.dump(existing_data, open('Support_Files\output_data.json','w'))
+        json.dump(existing_data, open('Support_Files\output_data.json','w'))
         
 def store_mp_data(store_data):
     import re
@@ -242,16 +271,17 @@ def store_mp_data(store_data):
                     while len(existing_data[exp_id][id]) > check_length:
                         print("list too long removing element")
                         del existing_data[exp_id][id][0]
-            json.dump(existing_data, open('Support_Files\output_mp_data.json','w'))
+        json.dump(existing_data, open('Support_Files\output_mp_data.json','w'), indent=4, sort_keys=True)
     except:
-        data = {}
-        for experiment in store_data:
-            exp_id=experiment[0]
-            data[exp_id]={}
-            for Data_n in experiment[1]:
-                data[exp_id][Data_n[0]]=Data_n[1]
-            json.dump(data, open('Support_Files\output_mp_data.json','w'))
+        json.dump(store_data, open('Support_Files\output_mp_data.json','w'), indent=4, sort_keys=True)
 
+def display_data():
+    with open('..\Support_Files\output_data.json') as json_file:
+        data = json.load(json_file)
+        print("Select graphing option:")
+        choice=input("input:")
+        if choice in (_list for sublist in data for _list in sublist):
+            display_graph(1,2) #not appropriate, jsut to avoid syntax error
 
 def display_graph(x,y):
     import os

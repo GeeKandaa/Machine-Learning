@@ -45,97 +45,121 @@ ret = {}
 ## Loading data
 path = 'active_data/'
 
-val_negative_cases = []
-val_positive_cases = []
+val_healthy_cases = []
+val_pneumonia_cases = []
+val_covid_cases = []
 
 ## Using glob acts as a file type filter to ensure type syncronosity
-positive_cases = glob.glob(path + param_vals["model"]["data"][1] + '/*.jpeg')
-negative_cases = glob.glob(path + param_vals["model"]["data"][0] + '/*.jpeg')
-rnd.shuffle(positive_cases)
-rnd.shuffle(negative_cases)
+pneumonia_cases = glob.glob(path + "PN" + '/*.jpeg')
+healthy_cases = glob.glob(path + "N" + '/*.jpeg')
+covid_cases = glob.glob(path + "CV" + '/*.jpeg')
+rnd.shuffle(pneumonia_cases)
+rnd.shuffle(healthy_cases)
+rnd.shuffle(covid_cases)
 
-pos_num = len(positive_cases)
-neg_num = len(negative_cases)
-print(pos_num)
-print(neg_num)
-chk_num=pos_num-neg_num
-print(chk_num)
-if chk_num > 0:
-    del positive_cases[:abs(chk_num)]
-elif chk_num < 0:
-    del negative_cases[:abs(chk_num)]
-num = len(positive_cases)
+pnu_num = len(pneumonia_cases)
+nor_num = len(healthy_cases)
+cov_num = len(covid_cases)
+print(pnu_num)
+print(nor_num)
+print(cov_num)
+chk_num=min(pnu_num,nor_num,cov_num)
+if pnu_num > chk_num:
+    del pneumonia_cases[:pnu_num-chk_num]
+if nor_num > chk_num:
+    del healthy_cases[:nor_num-chk_num]
+if cov_num > chk_num:
+    del covid_cases[:cov_num-chk_num]
 
+num = len(healthy_cases)
 train_num = math.floor(num/100*70)
 test_num = math.floor(num/100*15)
 val_num = math.floor(num/100*15)
 r = num-(train_num+test_num+val_num)
 train_num+=r
 
-train_negative_cases = negative_cases[:train_num]
-train_positive_cases = positive_cases[:train_num]
-del negative_cases[:train_num]
-del positive_cases[:train_num]
-# print("----------------------------------------------")
-# print(len(train_negative_cases)," elements:\n",train_negative_cases)
-# print("----------------------------------------------")
-# print(len(train_positive_cases)," elements:\n",train_positive_cases)
-test_negative_cases = negative_cases[:test_num]
-test_positive_cases = positive_cases[:test_num]
-del negative_cases[:test_num]
-del positive_cases[:test_num]
-# print("----------------------------------------------")
-# print(len(test_negative_cases)," elements:\n",test_negative_cases)
-# print("----------------------------------------------")
-# print(len(test_positive_cases)," elements:\n",test_positive_cases)
-val_negative_cases = negative_cases[:val_num]
-val_positive_cases = positive_cases[:val_num]
-# print("----------------------------------------------")
-# print(len(val_negative_cases)," elements:\n",val_negative_cases)
-# print("----------------------------------------------")
-# print(len(val_positive_cases)," elements:\n",val_positive_cases)
+train_healthy_cases = healthy_cases[:train_num]
+train_pneumonia_cases = pneumonia_cases[:train_num]
+train_covid_cases = covid_cases[:train_num]
+del healthy_cases[:train_num]
+del pneumonia_cases[:train_num]
+del covid_cases[:train_num]
+
+test_healthy_cases = healthy_cases[:test_num]
+test_pneumonia_cases = pneumonia_cases[:test_num]
+test_covid_cases = covid_cases[:test_num]
+del healthy_cases[:test_num]
+del pneumonia_cases[:test_num]
+del covid_cases[:test_num]
+
+val_healthy_cases = healthy_cases[:val_num]
+val_pneumonia_cases = pneumonia_cases[:val_num]
+val_covid_cases = covid_cases[:val_num]
+
 train_list = []
 test_list = []
 val_list = []
 
 j=0 
-for i in train_negative_cases:
-    # experiment.log_image(i, name='training_negative_'+str(j), overwrite=False)
+for i in train_healthy_cases:
+    # experiment.log_image(i, name='training_healthy_'+str(j), overwrite=False)
     train_list.append([i, 0])
     j+=1
 
 k=0
-for i in train_positive_cases:
-    # experiment.log_image(i, name='training_positive_'+str(j), overwrite=False)
+for i in train_pneumonia_cases:
+    # experiment.log_image(i, name='training_pneumonia_'+str(j), overwrite=False)
     train_list.append([i, 1])
     k+=1
     if k == j:
         break
+k=0
+for i in train_covid_cases:
+    # experiment.log_image(i, name='training_pneumonia_'+str(j), overwrite=False)
+    train_list.append([i, 2])
+    k+=1
+    if k == j:
+        break
+
 
 j=0
-for i in test_negative_cases:
-    # experiment.log_image(i, name='testing_negative_'+str(j), overwrite=False)
+for i in test_healthy_cases:
+    # experiment.log_image(i, name='testing_healthy_'+str(j), overwrite=False)
     test_list.append([i, 0])
     j+=1
 
 k=0
-for i in test_positive_cases:
-    # experiment.log_image(i, name='testing_positive_'+str(j), overwrite=False)
+for i in test_pneumonia_cases:
+    # experiment.log_image(i, name='testing_pneumonia_'+str(j), overwrite=False)
     test_list.append([i, 1])
+    k+=1
+    if k == j:
+        break
+k=0
+for i in test_covid_cases:
+    # experiment.log_image(i, name='testing_pneumonia_'+str(j), overwrite=False)
+    test_list.append([i, 2])
     k+=1
     if k == j:
         break
 
 j=0
-for i in val_negative_cases:
-    # experiment.log_image(i, name='validation_negative_'+str(j), overwrite=False)
+for i in val_healthy_cases:
+    # experiment.log_image(i, name='validation_healthy_'+str(j), overwrite=False)
     val_list.append([i, 0])
     j+=1
 
 k=0
-for i in val_positive_cases:
-    # experiment.log_image(i, name='validation_positive_'+str(j), overwrite=False)
+for i in val_pneumonia_cases:
+    # experiment.log_image(i, name='validation_pneumonia_'+str(j), overwrite=False)
     val_list.append([i, 1])
+    k+=1
+    if k == j:
+        break
+k=0
+for i in val_covid_cases:
+    # experiment.log_image(i, name='validation_pneumonia_'+str(j), overwrite=False)
+    val_list.append([i, 2])
     k+=1
     if k == j:
         break
@@ -177,7 +201,7 @@ if visualise == 'y':
     sb.countplot(val_df['label'])
     plt.title('Validation Data')
     
-    # plt.show()
+    plt.show()
 
 #sample images
     plt.figure(figsize=(20,8))
@@ -186,16 +210,16 @@ if visualise == 'y':
         plt.axis('off')
         img = plt.imread(img_path)
         plt.imshow(img, cmap='gray')
-        plt.title('Positive')
+        plt.title('pneumonia')
     
     for i,img_path in enumerate(train_df[train_df['label'] == 0][0:4]['image']):
         plt.subplot(2,4,4+i+1)
         plt.axis('off')
         img = plt.imread(img_path)
         plt.imshow(img, cmap='gray')
-        plt.title('Negative')
+        plt.title('healthy')
 
-    # plt.show()
+    plt.show()
 
 print('Data visualisation complete')
 # cont = input('Enter to continue')
@@ -245,9 +269,9 @@ datagen = ImageDataGenerator(
 datagen.fit(X_train)
 
 # Convert binary to categorical (process time improvement)
-y_train = to_categorical(y_train)
-y_test = to_categorical(y_test)
-y_val = to_categorical(y_val)
+y_train = to_categorical(y_train,3)
+y_test = to_categorical(y_test,3)
+y_val = to_categorical(y_val,3)
 
 class ConfusionMatrixCallback(Callback):
     def __init__(self, experiment, inputs, targets):
@@ -300,8 +324,8 @@ model.add(MaxPooling2D(pool_size=(2,2)))
 model.add(Flatten())
 
 model.add(Dense(128, activation='relu'))
-model.add(Dropout(0.4))
-model.add(Dense(2, activation="softmax"))
+model.add(Dropout(0.2))
+model.add(Dense(3, activation="softmax"))
 
 if param_vals['optimiser']['name'] == "Adam":
     params = param_vals['optimiser']
@@ -310,8 +334,7 @@ params = param_vals['compile']
 model.compile(loss=params['loss'], optimizer=optimizer, metrics=params['metrics'], loss_weights=params['loss_weights'], weighted_metrics=params['weighted_metrics'], run_eagerly=params['run_eagerly'])
 
 callback = [ConfusionMatrixCallback(experiment, X_test, y_test),EarlyStopping(monitor='loss', patience=6)]
-history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=[callback[0]], class_weight=[{0:param_vals["model"]["class_weights"][0], 1:param_vals["model"]["class_weights"][1]}])
-# history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=[callback[0]], class_weight=[{0:6.0, 1:0.5}])
+history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=[callback[0]], class_weight=[{0:6.0, 1:0.5, 2:0.5}])
 
 ################################################################################################################################
 ##Evaluation
@@ -333,7 +356,7 @@ plt.xlabel("Epoch #")
 plt.ylabel("Accuracy")
 plt.title('Accuracy on training vs testing')
 plt.legend(loc = 'best')
-# plt.show()
+plt.show()
 
 for i in history.epoch:
     experiment.log_metric("accuracy", history.history['accuracy'][i], epoch=i+1)
@@ -357,8 +380,8 @@ plt.yticks(rotation=0)
 plt.xlabel('Predicted labels')
 plt.ylabel('True labels')
 ax.xaxis.set_ticks_position('top')
-plt.title('Confusion matrix - (N - Negative, P - Positive):')
-# plt.show()
+plt.title('Confusion matrix - (N - healthy, P - pneumonia):')
+plt.show()
 
 ################################################################################################################################
 ## Validation & Report
