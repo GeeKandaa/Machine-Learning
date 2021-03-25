@@ -6,6 +6,7 @@ experiment = Experiment(
     workspace="geekandaa",
     disabled=True
 )
+
 import argparse
 import json
 import os
@@ -19,6 +20,7 @@ import pandas as pd
 import seaborn as sb
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import tf_explain.callbacks as tf_cb
 from tensorflow.keras import backend as K
 from tensorflow.keras import initializers
 from tensorflow.keras.models import Sequential, save_model, load_model
@@ -277,31 +279,31 @@ class ConfusionMatrixCallback(Callback):
 
 model = Sequential()
 
-model.add(Conv2D(filters=8, kernel_size=(7,7), padding='same', activation='relu', input_shape=(196, 196, 1)))
-model.add(Conv2D(filters=8, kernel_size=(7,7), padding='same', activation='relu'))
+model.add(Conv2D(filters=8, kernel_size=(7,7), padding='same', activation='relu', name="activation_1", input_shape=(196, 196, 1)))
+model.add(Conv2D(filters=8, kernel_size=(7,7), padding='same', activation='relu', name="activation_2"))
 model.add(MaxPooling2D(pool_size=(3,3)))
 
-model.add(Conv2D(filters=16, kernel_size=(5,5), padding='same', activation='relu'))
-model.add(Conv2D(filters=16, kernel_size=(5,5), padding='same', activation='relu'))
+model.add(Conv2D(filters=16, kernel_size=(5,5), padding='same', activation='relu', name="activation_3"))
+model.add(Conv2D(filters=16, kernel_size=(5,5), padding='same', activation='relu', name="activation_4"))
 model.add(MaxPooling2D(pool_size=(3,3)))
 
-model.add(Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu'))
-model.add(Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu'))
+model.add(Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu', name="activation_5"))
+model.add(Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu', name="activation_6"))
 model.add(MaxPooling2D(pool_size=(2,2)))
 
-model.add(Conv2D(filters=64, kernel_size=(3,3), padding='same', activation='relu'))
-model.add(Conv2D(filters=64, kernel_size=(3,3), padding='same', activation='relu'))
+model.add(Conv2D(filters=64, kernel_size=(3,3), padding='same', activation='relu', name="activation_7"))
+model.add(Conv2D(filters=64, kernel_size=(3,3), padding='same', activation='relu', name="activation_8"))
 model.add(MaxPooling2D(pool_size=(2,2)))
 
-model.add(Conv2D(filters=128, kernel_size=(3,3), padding='same', activation='relu'))
-model.add(Conv2D(filters=128, kernel_size=(3,3), padding='same', activation='relu'))
+model.add(Conv2D(filters=128, kernel_size=(3,3), padding='same', activation='relu', name="activation_9"))
+model.add(Conv2D(filters=128, kernel_size=(3,3), padding='same', activation='relu', name="activation_10"))
 model.add(MaxPooling2D(pool_size=(2,2)))
 
 model.add(Flatten())
 
-model.add(Dense(128, activation='relu'))
+model.add(Dense(128, activation='relu', name="activation_11"))
 model.add(Dropout(0.4))
-model.add(Dense(2, activation="softmax"))
+model.add(Dense(2, activation="softmax", name="activation_12"))
 
 if param_vals['optimiser']['name'] == "Adam":
     params = param_vals['optimiser']
@@ -309,8 +311,62 @@ if param_vals['optimiser']['name'] == "Adam":
 params = param_vals['compile']
 model.compile(loss=params['loss'], optimizer=optimizer, metrics=params['metrics'], loss_weights=params['loss_weights'], weighted_metrics=params['weighted_metrics'], run_eagerly=params['run_eagerly'])
 
-callback = [ConfusionMatrixCallback(experiment, X_test, y_test),EarlyStopping(monitor='loss', patience=6)]
-history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=[callback[0]], class_weight=[{0:param_vals["model"]["class_weights"][0], 1:param_vals["model"]["class_weights"][1]}])
+callback = [ConfusionMatrixCallback(experiment, X_test, y_test),
+EarlyStopping(monitor='loss', patience=6),
+tf_cb.ActivationsVisualizationCallback(
+        validation_data=(X_test,y_test),
+        layers_name=["activation_2"],
+        output_dir="./summaries",
+    ),
+
+tf_cb.ActivationsVisualizationCallback(
+        validation_data=(X_test,y_test),
+        layers_name=["activation_6"],
+        output_dir="./summaries",
+    ),
+tf_cb.ActivationsVisualizationCallback(
+        validation_data=(X_test,y_test),
+        layers_name=["activation_10"],
+        output_dir="./summaries",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test,y_test),
+        layer_name="activation_2",
+        class_index=1,
+        output_dir="./summaries",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test,y_test),
+        layer_name="activation_6",
+        class_index=1,
+        output_dir="./summaries",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test,y_test),
+        layer_name="activation_10",
+        class_index=1,
+        output_dir="./summaries",
+    ),
+    tf_cb.GradCAMCallback(
+        validation_data=(X_test,y_test),
+        layer_name="activation_2",
+        class_index=0,
+        output_dir="./summaries",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test,y_test),
+        layer_name="activation_6",
+        class_index=0,
+        output_dir="./summaries",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test,y_test),
+        layer_name="activation_10",
+        class_index=0,
+        output_dir="./summaries",
+    )
+]
+history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=callback, class_weight=[{0:param_vals["model"]["class_weights"][0], 1:param_vals["model"]["class_weights"][1]}])
 # history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=[callback[0]], class_weight=[{0:6.0, 1:0.5}])
 
 ################################################################################################################################

@@ -276,15 +276,51 @@ def store_mp_data(store_data):
         json.dump(store_data, open('Support_Files\output_mp_data.json','w'), indent=4, sort_keys=True)
 
 def display_data():
-    with open('..\Support_Files\output_data.json') as json_file:
+    from os import listdir
+    from os.path import isfile, join
+    name=[name for name in listdir("Support_Files") if isfile(join("Support_Files",name))]
+    i=0
+    for nm in name:
+        i+=1
+        print(str(i)+' - '+nm)
+    choice=input("input:")
+    with open('Support_Files\\'+name[int(choice)-1]) as json_file:
         data = json.load(json_file)
         print("Select graphing option:")
+        print("1 - confusion matrices")
+        print("2 - plot")
         choice=input("input:")
-        if choice in (_list for sublist in data for _list in sublist):
-            display_graph(1,2) #not appropriate, jsut to avoid syntax error
+        if choice == "1":
+            i=0
+            for nm in data["Data"]["conf_matrix"]:
+                i+=1
+                c_w=data["model"]["class_weights"][i-1]
+                print(str(i)+" - "+str(c_w[0])+", "+str(c_w[1]))
+            while choice.lower() != "quit":
+                choice=input("input:")
+                if choice.lower() == "quit":
+                    break
+                import seaborn
+                import matplotlib.pyplot as plt
+  
+                seaborn.set(color_codes=True)
+                plt.figure(1, figsize=(9, 6))
+                plt.title("Confusion Matrix")
+ 
+                seaborn.set(font_scale=1.4)
+                ax = seaborn.heatmap(data["Data"]["conf_matrix"][int(choice)-1], annot=True, cmap="YlGnBu", cbar_kws={'label': 'Scale'})
+                ax.set_xticklabels(["positive","negative"]) 
+                ax.set_yticklabels(["positive","negative"])
+                ax.set(ylabel="True Label", xlabel="Predicted Label")
+                plt.show()
+ 
+        elif choice == "2":
+            plt.show()
+
 
 def display_graph(x,y):
     import os
+    
     import pandas as pd
     import seaborn as sb
     import matplotlib.pyplot as plt
