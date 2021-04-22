@@ -6,7 +6,7 @@
     "optimiser": {
         "Active":true,
         "name":"Adam",
-        "lr":0.0007,
+        "lr":0.00065,
         "beta_1":0.9,
         "beta_2":0.999,
         "epsilon":null,
@@ -21,16 +21,17 @@
             "params":["monitor","min_delta","patience","verbose","mode","baseline","restore_best_weights"],
             "monitor":"loss",
             "min_delta":0, 
-            "patience":6,
+            "patience":8,
             "verbose":0,
             "mode":"auto",
             "baseline":null,
             "restore_best_weights":false
-        }
+        },
+        "Pack_Matrix":true
     },
 
     "compile":{
-        "loss":"binary_crossentropy",
+        "loss":"categorical_crossentropy",
         "metrics":[
             "accuracy"
         ],
@@ -40,10 +41,11 @@
     },
 
     "model":{
-        "data":["N","PN"],
+        "data":["N","CV"],
         "save":false,
-        "epoch":50,
+        "epoch":2,
         "threshold":0.0,
-        "class_weights":[2.0,0.4]
+        "class_weights":[2.0,0.4],
+        "three_class_weights":[2.0,0.8,4.0]
     }
 }

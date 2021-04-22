@@ -116,7 +116,7 @@ def get_param():
             "metrics":assigned["compile"]["metrics"],
             "loss_weights":assigned["compile"]["loss_weights"],
             "weighted_metrics":assigned["compile"]["weighted_metrics"],
-            "run_eagerly":assigned["compile"]["run_eagerly"],
+            "run_eagerly":assigned["compile"]["run_eagerly"]
         }
         param_vals["iteration"] = {
             "#":assigned["iteration"]["#"]
@@ -126,7 +126,8 @@ def get_param():
             "save":assigned["model"]["save"],
             "epoch":assigned["model"]["epoch"],
             "threshold":assigned["model"]["threshold"],
-            "class_weights":assigned["model"]["class_weights"]
+            "class_weights":assigned["model"]["class_weights"],
+            "three_class_weights":assigned["model"]["three_class_weights"]
         }
     print(" _____________________________________________________\n|Non-Default Parameters:")
     print("|\n|     optimiser:",args.optimiser)
@@ -182,42 +183,65 @@ def get_param():
     # cont=input("END.")
     return param_vals
 
-def store_data(id, vals, group, duplicates=True):
+def pack_matrix(_matrix):
+    
     try:
-        print("opening")
+        existing_data = json.load(open('Support_Files\output_data.json'))
+    except:
+        existing_data = {}
+    if not("Data" in existing_data):
+        existing_data["Data"]={"Pack":False}
+    if existing_data["Data"]["Pack"]:
+        existing_data["Data"]["Packed"].append(_matrix)
+        print("IFFED")
+    else:
+        print("ELSE")
+        existing_data["Data"]={"Pack":True,"Packed":[_matrix]}
+    print(existing_data["Data"]["Packed"])
+    with open('Support_Files\output_data.json','w') as json_file:
+        json.dump(existing_data, json_file, sort_keys=True, indent=4)
+
+def store_data(id, vals, group, duplicates=True):
+    # pack_matrix = []
+    try:
         with open('Support_Files\output_data.json') as json_file:
-            print("opening sucess")
+            # print("opening sucess")
             existing_data = json.load(json_file)
+            # if "Pack" in existing_data["Data"].items():
+                # pack_matrix = existing_data["Data"]["Packed"]
+                # debug
+                # print(pack_matrix)
             group_data={}
-            print("loading sucess", existing_data)
+            # print("loading sucess", existing_data)
             if group in existing_data:
                 group_data = existing_data[group]
             else:
                 existing_data[group] = group_data
             if id in group_data:
-                print("id exists")
+                # print("id exists")
                 data = group_data[id]
-                print("previous: ", data)
+                # print("previous: ", data)
                 for val in vals:
                     if val in data:
                         if duplicates == True:
                             data.append(val)
-                            print("duplicate new: ", val)
+                            # print("duplicate new: ", val)
                             group_data[id] = data
                         else:
-                            print("avoiding duplicate")
+                            # print("avoiding duplicate")
                             return
                     else:
-                        print("non-dupe new: ", val)
+                        # print("non-dupe new: ", val)
                         data.append(val)
                         group_data[id] = data
             else:
-                print("this is vals", vals)
-                print("1",existing_data)
+                # print("this is vals", vals)
+                # print("1",existing_data)
                 group_data[id] = vals
-                print("2 created id: ",id,":",group_data[id])
+                # print("2 created id: ",id,":",group_data[id])
         existing_data[group]=group_data
         with open('Support_Files\output_data.json','w') as json_file:
+            # existing_data["Data"]["Packed"]=pack_matrix
             json.dump(existing_data, json_file, sort_keys=True, indent=4)
         print("3",existing_data)
     except:
@@ -227,7 +251,7 @@ def store_data(id, vals, group, duplicates=True):
         with open('Support_Files\output_data.json','w') as json_file:
             json.dump(data, json_file)
 
-def verify_data_length():
+def pack_unpack():
     with open('Support_Files\output_data.json') as json_file:
         existing_data = json.load(json_file)
         existing_data=json.dumps(existing_data) 
@@ -291,28 +315,26 @@ def display_data():
         print("2 - plot")
         choice=input("input:")
         if choice == "1":
-            i=0
-            for nm in data["Data"]["conf_matrix"]:
-                i+=1
-                c_w=data["model"]["class_weights"][i-1]
-                print(str(i)+" - "+str(c_w[0])+", "+str(c_w[1]))
             while choice.lower() != "quit":
-                choice=input("input:")
-                if choice.lower() == "quit":
-                    break
                 import seaborn
                 import matplotlib.pyplot as plt
-  
-                seaborn.set(color_codes=True)
-                plt.figure(1, figsize=(9, 6))
-                plt.title("Confusion Matrix")
- 
-                seaborn.set(font_scale=1.4)
-                ax = seaborn.heatmap(data["Data"]["conf_matrix"][int(choice)-1], annot=True, cmap="YlGnBu", cbar_kws={'label': 'Scale'})
-                ax.set_xticklabels(["positive","negative"]) 
-                ax.set_yticklabels(["positive","negative"])
-                ax.set(ylabel="True Label", xlabel="Predicted Label")
-                plt.show()
+    
+                for i in range(0,len(data["Data"]["conf_matrix"])):
+                    
+                    seaborn.set(color_codes=True)
+                    plt.figure(1, figsize=(9, 9))
+                    seaborn.set(font_scale=2)
+                    plt.title("Predicted Label")
+                    
+                    ax = seaborn.heatmap(data["Data"]["conf_matrix"][i], annot=True, cmap="YlGnBu",fmt='d')
+                    ax.set_xticklabels(["Healthy","Pneumonia","Covid-19"]) 
+                    ax.set_yticklabels(["Healthy","Infected","Covid-19"])
+                    ax.set(ylabel="True Label")
+                    plt.savefig("./_comm/"+str(i))
+                    plt.show()
+            
+                choice=input("input:")
+                
  
         elif choice == "2":
             plt.show()

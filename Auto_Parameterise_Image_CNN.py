@@ -30,6 +30,17 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.optimizers import RMSprop, Adam
 from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import classification_report, confusion_matrix
+import visualkeras
+from collections import defaultdict
+from PIL import ImageFont
+
+font = ImageFont.truetype("arial.ttf", 32)
+color_map = defaultdict(dict)
+color_map[Conv2D]['fill'] = 'orange'
+color_map[Dropout]['fill'] = 'green'
+color_map[MaxPooling2D]['fill'] = 'red'
+color_map[Dense]['fill'] = 'teal'
+color_map[Flatten]['fill'] = 'gray'
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
@@ -239,7 +250,7 @@ print('Validation data shape: {}, Labels shape: {}'.format(X_val.shape, y_val.sh
 # Data generation
 datagen = ImageDataGenerator(
     rotation_range = 10,
-    zoom_range = 0.1,
+    zoom_range = [0.9,1.2],
     width_shift_range = 0.1,
     horizontal_flip = False,
     vertical_flip = False)
@@ -259,6 +270,13 @@ class ConfusionMatrixCallback(Callback):
 
     def on_epoch_end(self, epoch, logs={}):
         predicted = self.model.predict(self.inputs)
+
+        # y_test_hat = np.argmax(predicted, axis=1)
+        # y_test = np.argmax(self.targets, axis=1)
+        # conf_m = confusion_matrix(y_test, y_test_hat)
+        # conf_m = conf_m.tolist()
+        # json_comm.pack_matrix(conf_m)
+
         self.experiment.log_confusion_matrix(
             self.targets,
             predicted,
@@ -282,28 +300,28 @@ model = Sequential()
 model.add(Conv2D(filters=8, kernel_size=(7,7), padding='same', activation='relu', name="activation_1", input_shape=(196, 196, 1)))
 model.add(Conv2D(filters=8, kernel_size=(7,7), padding='same', activation='relu', name="activation_2"))
 model.add(MaxPooling2D(pool_size=(3,3)))
-
+model.add(visualkeras.SpacingDummyLayer(spacing=100))
 model.add(Conv2D(filters=16, kernel_size=(5,5), padding='same', activation='relu', name="activation_3"))
 model.add(Conv2D(filters=16, kernel_size=(5,5), padding='same', activation='relu', name="activation_4"))
 model.add(MaxPooling2D(pool_size=(3,3)))
-
+model.add(visualkeras.SpacingDummyLayer(spacing=100))
 model.add(Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu', name="activation_5"))
 model.add(Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu', name="activation_6"))
 model.add(MaxPooling2D(pool_size=(2,2)))
-
+model.add(visualkeras.SpacingDummyLayer(spacing=100))
 model.add(Conv2D(filters=64, kernel_size=(3,3), padding='same', activation='relu', name="activation_7"))
 model.add(Conv2D(filters=64, kernel_size=(3,3), padding='same', activation='relu', name="activation_8"))
 model.add(MaxPooling2D(pool_size=(2,2)))
-
+model.add(visualkeras.SpacingDummyLayer(spacing=100))
 model.add(Conv2D(filters=128, kernel_size=(3,3), padding='same', activation='relu', name="activation_9"))
 model.add(Conv2D(filters=128, kernel_size=(3,3), padding='same', activation='relu', name="activation_10"))
 model.add(MaxPooling2D(pool_size=(2,2)))
-
+model.add(visualkeras.SpacingDummyLayer(spacing=100))
 model.add(Flatten())
-
+model.add(visualkeras.SpacingDummyLayer(spacing=100))
 model.add(Dense(128, activation='relu', name="activation_11"))
 model.add(Dropout(0.4))
-model.add(Dense(2, activation="softmax", name="activation_12"))
+model.add(Dense(2, activation="sigmoid", name="activation_12"))
 
 if param_vals['optimiser']['name'] == "Adam":
     params = param_vals['optimiser']
@@ -312,60 +330,69 @@ params = param_vals['compile']
 model.compile(loss=params['loss'], optimizer=optimizer, metrics=params['metrics'], loss_weights=params['loss_weights'], weighted_metrics=params['weighted_metrics'], run_eagerly=params['run_eagerly'])
 
 callback = [ConfusionMatrixCallback(experiment, X_test, y_test),
-EarlyStopping(monitor='loss', patience=6),
-tf_cb.ActivationsVisualizationCallback(
-        validation_data=(X_test,y_test),
-        layers_name=["activation_2"],
-        output_dir="./summaries",
-    ),
-
-tf_cb.ActivationsVisualizationCallback(
-        validation_data=(X_test,y_test),
-        layers_name=["activation_6"],
-        output_dir="./summaries",
-    ),
-tf_cb.ActivationsVisualizationCallback(
-        validation_data=(X_test,y_test),
-        layers_name=["activation_10"],
-        output_dir="./summaries",
-    ),
+EarlyStopping(monitor=str(param_vals["callback"]["EarlyStopping"]["monitor"]), patience=param_vals["callback"]["EarlyStopping"]["patience"]),
 tf_cb.GradCAMCallback(
-        validation_data=(X_test,y_test),
-        layer_name="activation_2",
-        class_index=1,
-        output_dir="./summaries",
-    ),
-tf_cb.GradCAMCallback(
-        validation_data=(X_test,y_test),
-        layer_name="activation_6",
-        class_index=1,
-        output_dir="./summaries",
-    ),
-tf_cb.GradCAMCallback(
-        validation_data=(X_test,y_test),
-        layer_name="activation_10",
-        class_index=1,
-        output_dir="./summaries",
-    ),
-    tf_cb.GradCAMCallback(
-        validation_data=(X_test,y_test),
+        validation_data=(X_test[0:4],y_test[0:4]),
         layer_name="activation_2",
         class_index=0,
-        output_dir="./summaries",
+        output_dir="./summaries_0",
     ),
 tf_cb.GradCAMCallback(
-        validation_data=(X_test,y_test),
+        validation_data=(X_test[0:4],y_test[0:4]),
+        layer_name="activation_2",
+        class_index=1,
+        output_dir="./summaries_1",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test[0:4],y_test[0:4]),
+        layer_name="activation_4",
+        class_index=0,
+        output_dir="./summaries_0",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test[0:4],y_test[0:4]),
+        layer_name="activation_4",
+        class_index=1,
+        output_dir="./summaries_1",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test[0:4],y_test[0:4]),
         layer_name="activation_6",
         class_index=0,
-        output_dir="./summaries",
+        output_dir="./summaries_0",
     ),
 tf_cb.GradCAMCallback(
-        validation_data=(X_test,y_test),
+        validation_data=(X_test[0:4],y_test[0:4]),
+        layer_name="activation_6",
+        class_index=1,
+        output_dir="./summaries_1",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test[0:4],y_test[0:4]),
+        layer_name="activation_8",
+        class_index=0,
+        output_dir="./summaries_0",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test[0:4],y_test[0:4]),
+        layer_name="activation_8",
+        class_index=1,
+        output_dir="./summaries_1",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test[0:4],y_test[0:4]),
         layer_name="activation_10",
         class_index=0,
-        output_dir="./summaries",
+        output_dir="./summaries_0",
+    ),
+tf_cb.GradCAMCallback(
+        validation_data=(X_test[0:4],y_test[0:4]),
+        layer_name="activation_10",
+        class_index=1,
+        output_dir="./summaries_1",
     )
 ]
+
 history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=callback, class_weight=[{0:param_vals["model"]["class_weights"][0], 1:param_vals["model"]["class_weights"][1]}])
 # history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=[callback[0]], class_weight=[{0:6.0, 1:0.5}])
 
@@ -397,7 +424,8 @@ for i in history.epoch:
 
 ################################################################################################################################
 ## Confusion matrix
-
+visualkeras.layered_view(model,color_map=color_map,spacing=0,legend=True, font=font, to_file='two_model_layered_output.png').show() # write and show
+visualkeras.graph_view(model, to_file='two_model_graph_output.png').show() # write and show
 y_test_hat = model.predict(X_test, batch_size=4)
 y_test_hat = np.argmax(y_test_hat, axis=1)
 y_test = np.argmax(y_test, axis=1)
@@ -406,6 +434,7 @@ conf_m = confusion_matrix(y_test, y_test_hat)
 print(conf_m)
 clas_r = classification_report(y_test, y_test_hat)
 
+conf_m = confusion_matrix(y_test, y_test_hat)
 plt.figure(figsize = (5,3))
 sb.set(font_scale = 1.2)
 ax = sb.heatmap(conf_m, annot=True, xticklabels = ['N','P'], yticklabels = ['N', 'P'], cbar=False, cmap='Blues', linewidths=1, linecolor='black', fmt='.0f')
@@ -414,7 +443,7 @@ plt.xlabel('Predicted labels')
 plt.ylabel('True labels')
 ax.xaxis.set_ticks_position('top')
 plt.title('Confusion matrix - (N - Negative, P - Positive):')
-# plt.show()
+plt.show()
 
 ################################################################################################################################
 ## Validation & Report
@@ -464,5 +493,5 @@ else:
     conf_m = conf_m.tolist()
     print(conf_m)
     json_comm.store_data("conf_matrix",[conf_m],"Data")
-    # json_comm.verify_data_length()
+    # json_comm.pack_un()
 
