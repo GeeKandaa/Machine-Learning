@@ -10,6 +10,7 @@ experiment = Experiment(
 import argparse
 import json
 import os
+import time
 import math
 from modules import json_comm
 import glob
@@ -54,7 +55,7 @@ ret = {}
         
 ####################################################################################################################
 ## INITIALISATION AND VISUALISATION
-
+tic = time.perf_counter()
 ## Loading data
 path = 'active_data/'
 
@@ -327,6 +328,7 @@ if param_vals['optimiser']['name'] == "Adam":
     params = param_vals['optimiser']
     optimizer = Adam(lr=params['lr'], beta_1=params['beta_1'], beta_2=params['beta_2'], epsilon=params['epsilon'], decay=params['decay'])
 params = param_vals['compile']
+
 model.compile(loss=params['loss'], optimizer=optimizer, metrics=params['metrics'], loss_weights=params['loss_weights'], weighted_metrics=params['weighted_metrics'], run_eagerly=params['run_eagerly'])
 
 callback = [ConfusionMatrixCallback(experiment, X_test, y_test),
@@ -393,9 +395,13 @@ tf_cb.GradCAMCallback(
     )
 ]
 
+toc = time.perf_counter()
+print(f"time taken to build model and process data: {toc - tic:0.4f} seconds")
+tic = time.perf_counter()
 history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=callback, class_weight=[{0:param_vals["model"]["class_weights"][0], 1:param_vals["model"]["class_weights"][1]}])
 # history = model.fit(datagen.flow(X_train,y_train, batch_size=4), validation_data=(X_test, y_test), epochs = param_vals["model"]["epoch"], verbose = 1, callbacks=[callback[0]], class_weight=[{0:6.0, 1:0.5}])
-
+toc = time.perf_counter()
+print(f"time taken to build model and process data: {toc - tic:0.4f} seconds")
 ################################################################################################################################
 ##Evaluation
 
@@ -416,7 +422,7 @@ plt.xlabel("Epoch #")
 plt.ylabel("Accuracy")
 plt.title('Accuracy on training vs testing')
 plt.legend(loc = 'best')
-# plt.show()
+plt.show()
 
 for i in history.epoch:
     experiment.log_metric("accuracy", history.history['accuracy'][i], epoch=i+1)

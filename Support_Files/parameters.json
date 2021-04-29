@@ -43,7 +43,7 @@
     "model":{
         "data":["N","CV"],
         "save":false,
-        "epoch":2,
+        "epoch":50,
         "threshold":0.0,
         "class_weights":[2.0,0.4],
         "three_class_weights":[2.0,0.8,4.0]
