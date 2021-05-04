@@ -123,6 +123,7 @@ def get_param():
         }
         param_vals["model"] = {
             "data":assigned["model"]["data"],
+            "data_num":assigned["model"]["data_num"],
             "save":assigned["model"]["save"],
             "epoch":assigned["model"]["epoch"],
             "threshold":assigned["model"]["threshold"],
@@ -337,6 +338,19 @@ def display_data():
                 
  
         elif choice == "2":
+            import seaborn as sb
+            import matplotlib.pyplot as plt
+            x = [240,480,720,960,1200]
+            y = []
+            for i in range(0,len(data["Data"]["val_loss"])):
+                y.append(data["Data"]["val_loss"][i])
+            plt.figure(figsize = (20,5))
+            sb.lineplot(x = x, y = y, color='red', label = 'Loss')
+
+            plt.title('Quantity of Data vs Training Time')
+            plt.legend(loc = 'best')
+            plt.xlabel("# of Images")
+            plt.ylabel("Validation Loss")
             plt.show()
 
 

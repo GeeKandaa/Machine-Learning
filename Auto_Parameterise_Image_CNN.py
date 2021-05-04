@@ -80,6 +80,10 @@ elif chk_num < 0:
     del negative_cases[:abs(chk_num)]
 num = len(positive_cases)
 
+# Reduce data by percentage
+reduction_percentage=param_vals["model"]["data_num"]
+num = math.floor(num/100*reduction_percentage)
+
 train_num = math.floor(num/100*70)
 test_num = math.floor(num/100*15)
 val_num = math.floor(num/100*15)

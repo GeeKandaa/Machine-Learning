@@ -42,6 +42,7 @@
 
     "model":{
         "data":["N","CV"],
+        "data_num":100,
         "save":false,
         "epoch":50,
         "threshold":0.0,
