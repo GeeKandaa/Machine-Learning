@@ -1,0 +1,9 @@
+In order to avoid storage large amounts of data, links to source and data structure will be listed here
+
+chest x-ray dataset: https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia
+Covid-19 x-ray dataset: https://www.kaggle.com/tawsifurrahman/covid19-radiography-database
+
+structure:
+  path to Covid-19 images:	   	./active_data/CV/
+  path to Normal (healthy) images:	./active_data/N/
+  path to Pneumonia images:		./active_data/PN/

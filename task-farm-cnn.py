@@ -23,8 +23,8 @@ if rank==0:
 			print(data_store[i])
 		except:
 			print("error")
-	print("DATA STORE",data_store)
 	json_comm.store_mp_data(data_store)
 
 if rank!=0:
-	import Auto_Parameterise_Image_CNN
+	# import AP_2_Class_CNN
+	import AP_3_Class_CNN

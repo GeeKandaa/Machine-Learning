@@ -21,13 +21,13 @@
             "params":["monitor","min_delta","patience","verbose","mode","baseline","restore_best_weights"],
             "monitor":"loss",
             "min_delta":0, 
-            "patience":8,
+            "patience":6,
             "verbose":0,
             "mode":"auto",
             "baseline":null,
             "restore_best_weights":false
         },
-        "Pack_Matrix":true
+        "Pack_Matrix":false
     },
 
     "compile":{
@@ -42,9 +42,9 @@
 
     "model":{
         "data":["N","CV"],
-        "data_num":100,
-        "save":false,
-        "epoch":50,
+        "data_num":1,
+        "save":true,
+        "epoch":20,
         "threshold":0.0,
         "class_weights":[2.0,0.4],
         "three_class_weights":[2.0,0.8,4.0]

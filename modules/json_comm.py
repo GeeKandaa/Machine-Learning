@@ -1,15 +1,5 @@
 import argparse
 import json
-# from mpi4py import MPI
-#     comm= MPI.COMM_WORLD
-#     rank = comm.Get_rank()
-# def mpi_get_param():
-#     if rank == 0:
-#         goahead = True
-#         comm.send(goahead, dest=1)
-#     else:
-#         goahead=comm.recv(source=rank-1)
-#         return get_param()
 
 def pairs(arg):
     left = arg.split(":")[0] 
@@ -26,31 +16,23 @@ def UnString_Value(entry):
             if isinstance(entry_val, str):
                 entry_val.strip()
                 if entry_val.lower() == "none":
-                    #print("hit:",entry," | ", entry_key,",",entry_val)
                     entry[entry_key] = None
                     continue
                 if entry_val.lower() == "true":
-                    #print("hit:",entry," | ", entry_key,",",entry_val)
                     entry[entry_key] = True
                     continue
                 if entry_val.lower() == "false":
-                    #print("hit:",entry," | ", entry_key,",",entry_val)
                     entry[entry_key] = False
                     continue
                 if entry_val[0] == "[" and entry_val[-1] == "]":
-                    print(entry_val)
                     entry[entry_key] = entry_val.strip("[]").split(",")
                     for i in range(0,len(entry[entry_key])):
                         try:
                             test = float(entry[entry_key][i])
                             if test.is_integer():
-                                print(test.is_integer)
-                                print(test)
                                 entry[entry_key][i] = int(test)
-                                print(int(test))
                             else:
                                 entry[entry_key][i] = test
-                        # print("hit:",entry," | ", entry_key,",",entry_val)
                         except:
                             continue
                 try:
@@ -59,12 +41,9 @@ def UnString_Value(entry):
                         entry[entry_key] = int(entry_val)
                     else:
                         entry[entry_key] = test
-                    # print("hit:",entry," | ", entry_key,",",entry_val)
                 except:
                     continue
-                    # if entry_val.isnumeric():
-                    #     entry[entry_key] = int(entry_val)
-                    #     # print("hit:",entry," | ", entry_key,",",entry_val)
+
 
 def get_param():
     import argparse
@@ -110,6 +89,9 @@ def get_param():
                     param_vals["callback"][entry_key] = {}
                     for param in entry_val["params"]:
                         param_vals["callback"][entry_key][param] = assigned["callback"][entry_val["name"]][param]
+                elif not(type(entry_val) is dict):
+                    param_vals["callback"][entry_key] = assigned["callback"][entry_key]
+
 
         param_vals["compile"] = {
             "loss":assigned["compile"]["loss"],
@@ -130,12 +112,13 @@ def get_param():
             "class_weights":assigned["model"]["class_weights"],
             "three_class_weights":assigned["model"]["three_class_weights"]
         }
-    print(" _____________________________________________________\n|Non-Default Parameters:")
-    print("|\n|     optimiser:",args.optimiser)
-    print("|\n|     callback:",args.callback)
-    print("|\n|     compile:",args.compile)
-    print("|\n|     model:",args.model)
-    print("|_____________________________________________________")
+    # debug
+    # print(" _____________________________________________________\n|Non-Default Parameters:")
+    # print("|\n|     optimiser:",args.optimiser)
+    # print("|\n|     callback:",args.callback)
+    # print("|\n|     compile:",args.compile)
+    # print("|\n|     model:",args.model)
+    # print("|_____________________________________________________")
 
     if args.optimiser != None:
         new_val = args.optimiser
@@ -177,15 +160,11 @@ def get_param():
     for entry_key,entry_val in param_vals.items():
         UnString_Value(entry_val)
 
-    # cont=input("print params.")
-    # print(assigned)
-    # print("______________________________________________")
-    print(param_vals)
-    # cont=input("END.")
+    # debug
+    # print(param_vals)
     return param_vals
 
 def pack_matrix(_matrix):
-    
     try:
         existing_data = json.load(open('Support_Files\output_data.json'))
     except:
@@ -194,78 +173,52 @@ def pack_matrix(_matrix):
         existing_data["Data"]={"Pack":False}
     if existing_data["Data"]["Pack"]:
         existing_data["Data"]["Packed"].append(_matrix)
-        print("IFFED")
     else:
-        print("ELSE")
         existing_data["Data"]={"Pack":True,"Packed":[_matrix]}
-    print(existing_data["Data"]["Packed"])
     with open('Support_Files\output_data.json','w') as json_file:
         json.dump(existing_data, json_file, sort_keys=True, indent=4)
 
 def store_data(id, vals, group, duplicates=True):
-    # pack_matrix = []
+    pack_matrix = []
     try:
         with open('Support_Files\output_data.json') as json_file:
-            # print("opening sucess")
             existing_data = json.load(json_file)
-            # if "Pack" in existing_data["Data"].items():
-                # pack_matrix = existing_data["Data"]["Packed"]
-                # debug
-                # print(pack_matrix)
+            if "Pack" in existing_data["Data"].items():
+                pack_matrix = existing_data["Data"]["Packed"]
             group_data={}
-            # print("loading sucess", existing_data)
             if group in existing_data:
                 group_data = existing_data[group]
             else:
                 existing_data[group] = group_data
             if id in group_data:
-                # print("id exists")
+                # id exists
                 data = group_data[id]
-                # print("previous: ", data)
                 for val in vals:
                     if val in data:
                         if duplicates == True:
                             data.append(val)
-                            # print("duplicate new: ", val)
+                            # duplicate data
                             group_data[id] = data
                         else:
-                            # print("avoiding duplicate")
+                            # avoiding duplicate
                             return
                     else:
-                        # print("non-dupe new: ", val)
+                        # unique data
                         data.append(val)
                         group_data[id] = data
             else:
-                # print("this is vals", vals)
-                # print("1",existing_data)
                 group_data[id] = vals
-                # print("2 created id: ",id,":",group_data[id])
+                # create id
         existing_data[group]=group_data
         with open('Support_Files\output_data.json','w') as json_file:
-            # existing_data["Data"]["Packed"]=pack_matrix
+            existing_data["Data"]["Packed"]=pack_matrix
             json.dump(existing_data, json_file, sort_keys=True, indent=4)
-        print("3",existing_data)
     except:
         data = {group:{id:vals}}
-        print("exception", vals)
-        print("created file: ",data)
+        # Create file
         with open('Support_Files\output_data.json','w') as json_file:
             json.dump(data, json_file)
 
-def pack_unpack():
-    with open('Support_Files\output_data.json') as json_file:
-        existing_data = json.load(json_file)
-        existing_data=json.dumps(existing_data) 
-        check_length=min([len(existing_data[ele]) for ele in existing_data])
-        print(check_length)
-        print(existing_data)
-        for id in existing_data:
-            print(existing_data[id])
-            while len(existing_data[id]) > check_length:
-                print("list too long removing element")
-                del existing_data[id][0]
-        json.dump(existing_data, open('Support_Files\output_data.json','w'))
-        
 def store_mp_data(store_data):
     import re
     try:
@@ -299,8 +252,9 @@ def store_mp_data(store_data):
         json.dump(existing_data, open('Support_Files\output_mp_data.json','w'), indent=4, sort_keys=True)
     except:
         json.dump(store_data, open('Support_Files\output_mp_data.json','w'), indent=4, sort_keys=True)
-
+       
 def display_data():
+    # Not involved in neural network. Simply an easily accessible, modifiable function for inspecting data from network output json.
     from os import listdir
     from os.path import isfile, join
     name=[name for name in listdir("Support_Files") if isfile(join("Support_Files",name))]
@@ -352,37 +306,3 @@ def display_data():
             plt.xlabel("# of Images")
             plt.ylabel("Validation Loss")
             plt.show()
-
-
-def display_graph(x,y):
-    import os
-    
-    import pandas as pd
-    import seaborn as sb
-    import matplotlib.pyplot as plt
-    with open('..\Support_Files\output_data.json') as json_file:
-            data = json.load(json_file)
-            if isinstance(y,list):
-                fig, ax = plt.subplots(figsize = (20,5))
-                ax.set(xlabel=x, ylabel=y[len(y)-1])
-                for i in range(len(y)-1):
-                    ax.plot(x,y[i],data=data,label=y[i],marker="x")
-                ax.legend(loc='best')
-                plt.show()
-                return
-            # ax.set(xlim=(-0.00001,0.01))
-            plt.figure(figsize = (20,5))
-            plt.title(x+' vs '+y)
-            plt.xlabel(x)
-            plt.ylabel(y)
-            plt.show()
-            json_file.close()
-            os.remove(json_file.name)
-            ax = sb.lineplot(x = data[x], y = data[y], color='red')
-            # ax.set(xlim=(-0.00001,0.01))
-            plt.title(x+' vs '+y)
-            plt.xlabel(x)
-            plt.ylabel(y)
-            plt.show()
-            json_file.close()
-            # os.remove(json_file.name)
